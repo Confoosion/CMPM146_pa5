@@ -422,8 +422,15 @@ def generate_successors(population):
     results = []
     # STUDENT Design and implement this
     # Hint: Call generate_children() on some individuals and fill up results.
+    random_selector = random_generation(population)
+    parent = random_selector[0]
+    for child in random_selector[1:]:
+        results.append(child.generate_children(parent))
+
     return results
 
+def random_generation(population):
+    return random.choices(population, k=len(population))
 
 def ga():
     # STUDENT Feel free to play with this parameter
@@ -459,12 +466,16 @@ def ga():
                     print("Max fitness:", str(best.fitness()))
                     print("Average generation time:", (now - start) / generation)
                     print("Net time:", now - start)
-                    with open("levels/last.txt", 'w') as f:
+                    with open("levels/last.txt", 'w+') as f:
                         for row in best.to_level():
                             f.write("".join(row) + "\n")
                 generation += 1
                 # STUDENT Determine stopping condition
                 stop_condition = False
+
+                if generation > 2:
+                    stop_condition = True
+
                 if stop_condition:
                     break
                 # STUDENT Also consider using FI-2POP as in the Sorenson & Pasquier paper
@@ -491,6 +502,6 @@ if __name__ == "__main__":
     now = time.strftime("%m_%d_%H_%M_%S")
     # STUDENT You can change this if you want to blast out the whole generation, or ten random samples, or...
     for k in range(0, 10):
-        with open("levels/" + now + "_" + str(k) + ".txt", 'w+') as f:
+        with open("levels/" + now + "_" + str(k) + ".txt", 'w') as f:
             for row in final_gen[k].to_level():
                 f.write("".join(row) + "\n")
