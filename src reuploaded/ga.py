@@ -67,12 +67,59 @@ class Individual_Grid(object):
         # STUDENT implement a mutation operator, also consider not mutating this individual
         # STUDENT also consider weighting the different tile types so it's not uniformly random
         # STUDENT consider putting more constraints on this to prevent pipes in the air, etc
-
         left = 1
         right = width - 1
         for y in range(height):
             for x in range(left, right):
-                pass
+                # Making an enemy or coin
+                if(y == 14):
+                    if random.random() < 0.01:
+                        if(genome[y][x] == "-"):
+                            choice = random.randrange(1, 4)
+                            if(choice == 1):
+                                genome[y][x] = "E"
+                            elif(choice == 2):
+                                genome[y][x] = "o"
+                # Switching the ? block
+                if(genome[y][x] == "?"):
+                    if random.random() < 0.25:
+                        choice = random.randrange(1,3)
+                        if(choice == 1):
+                            genome[y][x] = "B"
+                        elif(choice == 2):
+                            genome[y][x] = "M"
+                # Switching the breakable block
+                if(genome[y][x] == "B"):
+                    if random.random() < 0.25:
+                        choice = random.randrange(1,5)
+                        if(choice == 1):
+                            genome[y][x] = "?"
+                        elif(choice == 2):
+                            genome[y][x] = "X"
+                        elif(choice == 3):
+                            genome[y][x] = "-"
+                # Switching mushroom block
+                if(genome[y][x] == "M"):
+                    if random.random() < 0.25:
+                        choice = random.randrange(1,5)
+                        if(choice == 1):
+                            genome[y][x] = "?"
+                        elif(choice == 2):
+                            genome[y][x] = "B"
+                        elif(choice == 3):
+                            genome[y][x] = "-"
+                # Adding stuff to empty spaces
+                if(y > 9 and y < 14):
+                    if random.random() < 0.009:
+                        if(genome[y][x] == "-"):
+                            choice = random.randrange(1,9)
+                            if(choice == 1):
+                                genome[y][x] = "o"
+                            elif(choice == 2):
+                                genome[y][x] = "B"
+                            elif(choice == 3):
+                                genome[y][x] = "?"
+
         return genome
 
     # Create zero or more children from self and other
@@ -86,9 +133,37 @@ class Individual_Grid(object):
             for x in range(left, right):
                 # STUDENT Which one should you take?  Self, or other?  Why?
                 # STUDENT consider putting more constraints on this to prevent pipes in the air, etc
-                pass
+
+                # If a pipe top is found in the other genome...
+                if other.genome[y][x] == "T":
+                    if y + 1 >= height or other.genome[y + 1][x] != "|":
+                        continue
+                    # Check if it is on the ground or there is a pipe segment below it
+                    else:
+                        # Add other to new genome
+                        new_genome[y][x] = other.genome[y][x]
+                        continue
+                
+                # If a solid wall or a pipe segment is found in the other genome...
+                if(other.genome[y][x] == "X" or other.genome[y][x] == "|"):
+                    # Add other to new genome
+                    new_genome[y][x] = other.genome[y][x]
+                    continue
+                
+                # Pick self if the fitness is better than other
+                if self._fitness > other._fitness:
+                    if(other.genome[y][x] != "T" and other.genome[y][x] != "X" and other.genome[y][x] != "|"):
+                        if(self.genome[y][x] != "T" and self.genome[y][x] != "|"):
+                            new_genome[y][x] = self.genome[y][x]
+                # Pick other if the fitness is better than self
+                else:
+                    if(self.genome[y][x] != "T" and self.genome[y][x] != "X" and self.genome[y][x] != "|"):
+                        if(other.genome[y][x] != "T" and other.genome[y][x] != "|"):
+                            new_genome[y][x] = other.genome[y][x]
+    
         # do mutation; note we're returning a one-element tuple here
-        return (Individual_Grid(new_genome),)
+        new_genome = other.mutate(new_genome)
+        return (Individual_Grid(new_genome))
 
     # Turn the genome into a level string (easy for this genome)
     def to_level(self):
@@ -416,6 +491,6 @@ if __name__ == "__main__":
     now = time.strftime("%m_%d_%H_%M_%S")
     # STUDENT You can change this if you want to blast out the whole generation, or ten random samples, or...
     for k in range(0, 10):
-        with open("levels/" + now + "_" + str(k) + ".txt", 'w') as f:
+        with open("levels/" + now + "_" + str(k) + ".txt", 'w+') as f:
             for row in final_gen[k].to_level():
                 f.write("".join(row) + "\n")
