@@ -49,7 +49,7 @@ class Individual_Grid(object):
             negativeSpace=0.6,
             pathPercentage=0.5,
             emptyPercentage=0.6,
-            linearity=-0.5,
+            linearity=-0.5, #
             solvability=2.0
         )
         self._fitness = sum(map(lambda m: coefficients[m] * measurements[m],
@@ -336,6 +336,8 @@ class Individual_DE(object):
 
     def generate_children(self, other):
         # STUDENT How does this work?  Explain it in your writeup.
+        # Modify
+        # genome is not initialized. 
         pa = random.randint(0, len(self.genome) - 1)
         pb = random.randint(0, len(other.genome) - 1)
         a_part = self.genome[:pa] if len(self.genome) > 0 else []
@@ -345,7 +347,9 @@ class Individual_DE(object):
         a_part = self.genome[pa:] if len(self.genome) > 0 else []
         gb = b_part + a_part
         # do mutation
-        return Individual_DE(self.mutate(ga)), Individual_DE(self.mutate(gb))
+        # return Individual_DE(self.mutate(ga)), Individual_DE(self.mutate(gb))
+        # pick the better one based on fitness
+        return Individual_DE(self.mutate(ga))
 
     # Apply the DEs to a base level.
     def to_level(self):
@@ -415,22 +419,37 @@ class Individual_DE(object):
         return Individual_DE(g)
 
 
-Individual = Individual_Grid
+Individual = Individual_DE
 
 
 def generate_successors(population):
+    # for i in population:
+    #     print(i.genome)
     results = []
     # STUDENT Design and implement this
     # Hint: Call generate_children() on some individuals and fill up results.
     random_selector = random_generation(population)
-    parent = random_selector[0]
-    for child in random_selector[1:]:
-        results.append(child.generate_children(parent))
-
+    for i in range(len(random_selector)):
+        parent = random_selector[i]
+        if parent.genome != []:
+            break
+    
+    best_genomes = best_generations(population)
+    print("length")
+    print(len(best_genomes))
+    # print("best genomes")
+    for child in best_genomes[:100]:
+        # print(child._fitness)
+        if child.genome != [] and child != parent:
+            results.append(child.generate_children(parent))
     return results
 
 def random_generation(population):
     return random.choices(population, k=len(population))
+
+
+def best_generations(population):
+    return sorted(population, key=Individual.fitness, reverse = True)
 
 def ga():
     # STUDENT Feel free to play with this parameter
@@ -466,6 +485,8 @@ def ga():
                     print("Max fitness:", str(best.fitness()))
                     print("Average generation time:", (now - start) / generation)
                     print("Net time:", now - start)
+                    worst = min(population, key=Individual.fitness)
+                    print("Min fitness:", str(worst.fitness()))
                     with open("levels/last.txt", 'w+') as f:
                         for row in best.to_level():
                             f.write("".join(row) + "\n")
@@ -484,6 +505,9 @@ def ga():
                 gendone = time.time()
                 print("Generated successors in:", gendone - gentime, "seconds")
                 # Calculate fitness in batches in parallel
+                # for i in population:
+                #     #print(i.genome)
+                #     print(type(i))
                 next_population = pool.map(Individual.calculate_fitness,
                                            next_population,
                                            batch_size)
@@ -501,7 +525,8 @@ if __name__ == "__main__":
     print("Best fitness: " + str(best.fitness()))
     now = time.strftime("%m_%d_%H_%M_%S")
     # STUDENT You can change this if you want to blast out the whole generation, or ten random samples, or...
+    print(final_gen[0].genome)
     for k in range(0, 10):
-        with open("levels/" + now + "_" + str(k) + ".txt", 'w') as f:
+        with open("levels/DE/" + now + "_" + str(k) + ".txt", 'w') as f:
             for row in final_gen[k].to_level():
                 f.write("".join(row) + "\n")
