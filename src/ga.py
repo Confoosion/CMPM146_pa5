@@ -49,12 +49,13 @@ class Individual_Grid(object):
             negativeSpace=0.6,
             pathPercentage=0.5,
             emptyPercentage=0.6,
-            linearity=-0.5, #
+            linearity=-0.5,
             solvability=2.0
         )
         self._fitness = sum(map(lambda m: coefficients[m] * measurements[m],
                                 coefficients))
         return self
+
 
     # Return the cached fitness value or calculate it as needed.
     def fitness(self):
@@ -226,6 +227,10 @@ class Individual_DE(object):
         self._fitness = None
         self._level = None
 
+    def is_solveable(self):
+        measurements = metrics.metrics(self.to_level())
+        return measurements['solvability']
+
     # Calculate and cache fitness
     def calculate_fitness(self):
         measurements = metrics.metrics(self.to_level())
@@ -238,7 +243,7 @@ class Individual_DE(object):
             pathPercentage=0.5,
             emptyPercentage=0.6,
             linearity=-0.5,
-            solvability=2.0
+            solvability=3.0
         )
         penalties = 0
         # STUDENT For example, too many stairs are unaesthetic.  Let's penalize that
@@ -247,6 +252,7 @@ class Individual_DE(object):
         # STUDENT If you go for the FI-2POP extra credit, you can put constraint calculation in here too and cache it in a new entry in __slots__.
         self._fitness = sum(map(lambda m: coefficients[m] * measurements[m],
                                 coefficients)) + penalties
+        #print("solvability",str(Individual.is_solveable(self)))
         return self
 
     def fitness(self):
@@ -342,14 +348,13 @@ class Individual_DE(object):
         pb = random.randint(0, len(other.genome) - 1)
         a_part = self.genome[:pa] if len(self.genome) > 0 else []
         b_part = other.genome[pb:] if len(other.genome) > 0 else []
-        ga = a_part + b_part
+        ga = Individual_DE(self.mutate(a_part + b_part))
         b_part = other.genome[:pb] if len(other.genome) > 0 else []
         a_part = self.genome[pa:] if len(self.genome) > 0 else []
-        gb = b_part + a_part
-        # do mutation
-        # return Individual_DE(self.mutate(ga)), Individual_DE(self.mutate(gb))
-        # pick the better one based on fitness
-        return Individual_DE(self.mutate(ga))
+        gb = Individual_DE(self.mutate(b_part + a_part))
+        # if Individual.fitness(ga) > Individual.fitness(ga):
+        #     return ga
+        return ga
 
     # Apply the DEs to a base level.
     def to_level(self):
@@ -437,9 +442,7 @@ def generate_successors(population):
     best_genomes = best_generations(population)
     print("length")
     print(len(best_genomes))
-    # print("best genomes")
     for child in best_genomes[:100]:
-        # print(child._fitness)
         if child.genome != [] and child != parent:
             results.append(child.generate_children(parent))
     return results
@@ -449,7 +452,11 @@ def random_generation(population):
 
 
 def best_generations(population):
-    return sorted(population, key=Individual.fitness, reverse = True)
+    return sorted(
+        population,  # List to sort
+        key=Individual.fitness,  # Sort by is_solveable first, then fitness
+        reverse=True  # Sort in descending order
+    )
 
 def ga():
     # STUDENT Feel free to play with this parameter
@@ -526,6 +533,10 @@ if __name__ == "__main__":
     now = time.strftime("%m_%d_%H_%M_%S")
     # STUDENT You can change this if you want to blast out the whole generation, or ten random samples, or...
     print(final_gen[0].genome)
+    # with open("levels/DE/" + now + "_" + str(0) + ".txt", 'w') as f:
+    #     for row in final_gen[0].to_level():
+    #         f.write("".join(row) + "\n")
+
     for k in range(0, 10):
         with open("levels/DE/" + now + "_" + str(k) + ".txt", 'w') as f:
             for row in final_gen[k].to_level():
