@@ -35,6 +35,10 @@ class Individual_Grid(object):
     def __init__(self, genome):
         self.genome = copy.deepcopy(genome)
         self._fitness = None
+    
+    def is_solveable(self):
+        measurements = metrics.metrics(self.to_level())
+        return measurements['solvability']
 
     # Update this individual's estimate of its fitness.
     # This can be expensive so we do it once and then cache the result.
@@ -238,12 +242,19 @@ class Individual_DE(object):
         # STUDENT Add more metrics?
         # STUDENT Improve this with any code you like
         coefficients = dict(
-            meaningfulJumpVariance=0.5,
+            meaningfulJumpVariance=0.6,
             negativeSpace=0.6,
             pathPercentage=0.5,
-            emptyPercentage=0.6,
-            linearity=-0.5,
-            solvability=3.0
+            emptyPercentage=0.3,
+            linearity=1,
+            solvability=5.0,
+            meaningfulJumps = 0.5,
+            leniency = 0.15 # higher is less lenient
+            # 'length': maxX,
+            #     'leniency': leniency,
+            #     'jumps': float(totalJumps) / float(pathcount),
+            #     'jumpVariance': float(jumpVariance) / float(pathcount),
+            #decorationPercentage = 0.2
         )
         penalties = 0
         # STUDENT For example, too many stairs are unaesthetic.  Let's penalize that
@@ -263,7 +274,7 @@ class Individual_DE(object):
     def mutate(self, new_genome):
         # STUDENT How does this work?  Explain it in your writeup.
         # STUDENT consider putting more constraints on this, to prevent generating weird things
-        if random.random() < 0.1 and len(new_genome) > 0:
+        if random.random() < 0.9 and len(new_genome) > 0:
             to_change = random.randint(0, len(new_genome) - 1)
             de = new_genome[to_change]
             new_de = de
@@ -292,24 +303,26 @@ class Individual_DE(object):
                 new_de = (x, de_type, y, has_powerup)
             elif de_type == "3_coin":
                 y = de[2]
-                if choice < 0.5:
+                if choice < 0.7:
                     x = offset_by_upto(x, width / 8, min=1, max=width - 2)
                 else:
                     y = offset_by_upto(y, height / 2, min=0, max=height - 1)
                 new_de = (x, de_type, y)
             elif de_type == "7_pipe":
                 h = de[2]
-                if choice < 0.5:
+                if choice < 0.2:
                     x = offset_by_upto(x, width / 8, min=1, max=width - 2)
                 else:
-                    h = offset_by_upto(h, 2, min=2, max=height - 4)
-                new_de = (x, de_type, h)
+                    h = offset_by_upto(h, 2, min=1, max=3) # limits height of pipes to 3
+                h = min(h,3)
+                new_de = (x, de_type, h) 
             elif de_type == "0_hole":
                 w = de[2]
-                if choice < 0.5:
+                if choice < 0.2:
                     x = offset_by_upto(x, width / 8, min=1, max=width - 2)
                 else:
-                    w = offset_by_upto(w, 4, min=1, max=width - 2)
+                    w = offset_by_upto(w, 4, min=1, max=3) # limits width of pipes to 3
+                w = min(w,3)
                 new_de = (x, de_type, w)
             elif de_type == "6_stairs":
                 h = de[2]
@@ -344,6 +357,7 @@ class Individual_DE(object):
         # STUDENT How does this work?  Explain it in your writeup.
         # Modify
         # genome is not initialized. 
+        # old mutates randomly
         pa = random.randint(0, len(self.genome) - 1)
         pb = random.randint(0, len(other.genome) - 1)
         a_part = self.genome[:pa] if len(self.genome) > 0 else []
@@ -538,6 +552,7 @@ if __name__ == "__main__":
     #         f.write("".join(row) + "\n")
 
     for k in range(0, 10):
+        print(str(k), "solvability", str(Individual.is_solveable(final_gen[k])))
         with open("levels/DE/" + now + "_" + str(k) + ".txt", 'w') as f:
             for row in final_gen[k].to_level():
                 f.write("".join(row) + "\n")
