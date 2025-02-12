@@ -245,7 +245,7 @@ class Individual_DE(object):
             meaningfulJumpVariance=0.6,
             negativeSpace=0.6,
             pathPercentage=0.5,
-            emptyPercentage=0.3,
+            emptyPercentage=0.6,
             linearity=1,
             solvability=5.0,
             meaningfulJumps = 0.5,
@@ -547,12 +547,9 @@ if __name__ == "__main__":
     now = time.strftime("%m_%d_%H_%M_%S")
     # STUDENT You can change this if you want to blast out the whole generation, or ten random samples, or...
     print(final_gen[0].genome)
-    # with open("levels/DE/" + now + "_" + str(0) + ".txt", 'w') as f:
-    #     for row in final_gen[0].to_level():
-    #         f.write("".join(row) + "\n")
 
     for k in range(0, 10):
-        print(str(k), "solvability", str(Individual.is_solveable(final_gen[k])))
+        print(str(k), "solvability", str(Individual.is_solveable(final_gen[k])), "fitness", str(Individual.fitness(final_gen[k])) )
         with open("levels/DE/" + now + "_" + str(k) + ".txt", 'w') as f:
             for row in final_gen[k].to_level():
                 f.write("".join(row) + "\n")
