@@ -88,15 +88,17 @@ class Individual_Grid(object):
                 # Switching the ? block
                 if(genome[y][x] == "?"):
                     if random.random() < 0.25:
-                        choice = random.randrange(1,3)
+                        choice = random.randrange(1,4)
                         if(choice == 1):
                             genome[y][x] = "B"
                         elif(choice == 2):
                             genome[y][x] = "M"
+                        elif(choice == 3):
+                            genome[y][x] = "-"
                 # Switching the breakable block
                 if(genome[y][x] == "B"):
                     if random.random() < 0.25:
-                        choice = random.randrange(1,5)
+                        choice = random.randrange(1,4)
                         if(choice == 1):
                             genome[y][x] = "?"
                         elif(choice == 2):
@@ -106,24 +108,32 @@ class Individual_Grid(object):
                 # Switching mushroom block
                 if(genome[y][x] == "M"):
                     if random.random() < 0.25:
-                        choice = random.randrange(1,5)
+                        choice = random.randrange(1,4)
                         if(choice == 1):
                             genome[y][x] = "?"
                         elif(choice == 2):
                             genome[y][x] = "B"
                         elif(choice == 3):
                             genome[y][x] = "-"
+                # Removing solid walls
+                if(genome[y][x] == "X"):
+                    if random.random() < 0.25:
+                        choice = random.randrange(1,2)
+                        if(choice == 1):
+                            genome[y][x] = "-"
                 # Adding stuff to empty spaces
                 if(y > 9 and y < 14):
                     if random.random() < 0.009:
                         if(genome[y][x] == "-"):
-                            choice = random.randrange(1,9)
+                            choice = random.randrange(1,5)
                             if(choice == 1):
                                 genome[y][x] = "o"
                             elif(choice == 2):
                                 genome[y][x] = "B"
                             elif(choice == 3):
                                 genome[y][x] = "?"
+                            elif(choice == 4):
+                                genome[y][x] = "E"
 
         return genome
 
@@ -139,6 +149,9 @@ class Individual_Grid(object):
                 # STUDENT Which one should you take?  Self, or other?  Why?
                 # STUDENT consider putting more constraints on this to prevent pipes in the air, etc
 
+                if y < 6:
+                    continue
+
                 # If a pipe top is found in the other genome...
                 if other.genome[y][x] == "T":
                     if y + 1 >= height or other.genome[y + 1][x] != "|":
@@ -152,19 +165,27 @@ class Individual_Grid(object):
                 # If a solid wall or a pipe segment is found in the other genome...
                 if(other.genome[y][x] == "X" or other.genome[y][x] == "|"):
                     # Add other to new genome
-                    new_genome[y][x] = other.genome[y][x]
+                    if random.random() < 0.25:
+                        new_genome[y][x] = other.genome[y][x]
                     continue
                 
-                # Pick self if the fitness is better than other
+                if(other.genome[y][x] == "B" or self.genome[y][x] == "B"):
+                    if(new_genome[y-1][x] == "B" or random.random() < 0.5):
+                        new_genome[y][x] = "B"
+                    continue
+
+                if(other.genome[y][x] == "E" or other.genome[y][x] == "M" or other.genome[y][x] == "?"):
+                    if random.random() < 0.25:
+                        new_genome[y][x] = other.genome[y][x]
+                    continue
+
+                if(self.genome[y][x] == "-" or other.genome[y][x] == "-"):
+                    new_genome[y][x] = "-"
+                    continue
+
+                # If self fitness is better than other fitness, then use it
                 if self._fitness > other._fitness:
-                    if(other.genome[y][x] != "T" and other.genome[y][x] != "X" and other.genome[y][x] != "|"):
-                        if(self.genome[y][x] != "T" and self.genome[y][x] != "|"):
-                            new_genome[y][x] = self.genome[y][x]
-                # Pick other if the fitness is better than self
-                else:
-                    if(self.genome[y][x] != "T" and self.genome[y][x] != "X" and self.genome[y][x] != "|"):
-                        if(other.genome[y][x] != "T" and other.genome[y][x] != "|"):
-                            new_genome[y][x] = other.genome[y][x]
+                    new_genome[y][x] = self.genome[y][x]
     
         # do mutation; note we're returning a one-element tuple here
         new_genome = other.mutate(new_genome)
@@ -438,7 +459,7 @@ class Individual_DE(object):
         return Individual_DE(g)
 
 
-Individual = Individual_DE
+Individual = Individual_Grid
 
 
 def generate_successors(population):
@@ -550,6 +571,6 @@ if __name__ == "__main__":
 
     for k in range(0, 10):
         print(str(k), "solvability", str(Individual.is_solveable(final_gen[k])), "fitness", str(Individual.fitness(final_gen[k])) )
-        with open("levels/DE/" + now + "_" + str(k) + ".txt", 'w') as f:
+        with open("levels/" + now + "_" + str(k) + ".txt", 'w+') as f:
             for row in final_gen[k].to_level():
                 f.write("".join(row) + "\n")
